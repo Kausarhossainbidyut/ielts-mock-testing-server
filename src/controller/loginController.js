@@ -7,7 +7,7 @@ const { validateRegistrationData, validateLoginData } = require('../utils/valida
 // Helper function to create JWT token
 const createToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d"
   });
 };
 
@@ -15,47 +15,45 @@ const createToken = (payload) => {
 const registerUser = async (req, res, next) => {
   try {
     const { name, email, password, targetBand, currentLevel, examDate } = req.body;
-    
-    // Validate input data
+
     validateRegistrationData({ name, email, password });
-    
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+
+    const normalizedEmail = email.toLowerCase();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return next(createError(409, 'User already exists with this email'));
     }
-    
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
-    // Create new user
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const newUser = new User({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       targetBand: targetBand || 7,
       currentLevel: currentLevel || 'beginner',
-      examDate: examDate || undefined
+      examDate: examDate || null
     });
-    
+
     const savedUser = await newUser.save();
-    
-    // Create JWT token
-    const token = createToken({ _id: savedUser._id, email: savedUser.email });
-    
-    // Set cookie with token
+
+    const token = createToken({
+      id: savedUser._id,
+      role: savedUser.role,
+      verified: savedUser.verified
+    });
+
     res.cookie('accessToken', token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     });
-    
-    // Send response without password
-    const userResponse = { ...savedUser.toObject() };
+
+    const userResponse = savedUser.toObject();
     delete userResponse.password;
-    
+
     res.status(201).json({
       success: true,
       message: 'Registration successful',
@@ -67,41 +65,40 @@ const registerUser = async (req, res, next) => {
   }
 };
 
+
 // Login user
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    
-    // Validate input data
+
     validateLoginData({ email, password });
-    
-    // Find user by email
-    const user = await User.findOne({ email });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return next(createError(404, 'Invalid email or password'));
+      return next(createError(401, 'Invalid email or password'));
     }
-    
-    // Compare password
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return next(createError(400, 'Invalid email or password'));
+      return next(createError(401, 'Invalid email or password'));
     }
-    
-    // Create JWT token
-    const token = createToken({ _id: user._id, email: user.email });
-    
-    // Set cookie with token
+
+    const token = createToken({
+      id: user._id,
+      role: user.role,
+      verified: user.verified
+    });
+
     res.cookie('accessToken', token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     });
-    
-    // Send response without password
-    const userResponse = { ...user.toObject() };
+
+    const userResponse = user.toObject();
     delete userResponse.password;
-    
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -112,6 +109,7 @@ const loginUser = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // Get current logged in user
 const getCurrentUser = async (req, res, next) => {

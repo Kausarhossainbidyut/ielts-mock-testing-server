@@ -8,8 +8,8 @@ const isValidEmail = (email) => {
 
 // Password validation
 const isValidPassword = (password) => {
-  // Minimum 8 characters, at least one uppercase, one lowercase, one number
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d!@#$%^&*()_+=\-{}\[\]:;"'<>,.?/\\|]{8,}$/;
+  // Minimum 8 characters, at least one uppercase, one lowercase, one number, and one special character
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
   return passwordRegex.test(password);
 };
 
@@ -31,7 +31,7 @@ const validateRegistrationData = (data) => {
   if (!password || !isValidPassword(password)) {
     throw createError(
       400, 
-      'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, and one number'
+      'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*()_+-=[]{};\':"\\|,.<>/?])'
     );
   }
   
