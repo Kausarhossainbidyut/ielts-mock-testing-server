@@ -3,16 +3,31 @@ const createError = require('http-errors');
 
 const authenticate = (req, res, next) => {
   try {
+    let token;
+    
     // Get token from cookie
-    const token = req.cookies.accessToken;
+    token = req.cookies.accessToken;
+    
+    // If no token in cookie, check Authorization header
+    if (!token && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
     
     if (!token) {
       return next(createError(401, 'Access denied. No token provided.'));
     }
     
+    // If token has Bearer prefix, remove it
+    if (token.startsWith('Bearer ')) {
+      token = token.substring(7);
+    }
+    
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded._id;
+    req.userId = decoded._id || decoded.id;
     req.userEmail = decoded.email;
     
     next();

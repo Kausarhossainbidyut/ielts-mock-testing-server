@@ -40,6 +40,7 @@ const registerUser = async (req, res, next) => {
 
     const token = createToken({
       id: savedUser._id,
+      email: savedUser.email,
       role: savedUser.role,
       verified: savedUser.verified
     });
@@ -58,7 +59,7 @@ const registerUser = async (req, res, next) => {
       success: true,
       message: 'Registration successful',
       user: userResponse,
-      token
+      token: `Bearer ${token}`
     });
   } catch (error) {
     next(error);
@@ -85,6 +86,7 @@ const loginUser = async (req, res, next) => {
 
     const token = createToken({
       id: user._id,
+      email: user.email,
       role: user.role,
       verified: user.verified
     });
@@ -103,7 +105,7 @@ const loginUser = async (req, res, next) => {
       success: true,
       message: 'Login successful',
       user: userResponse,
-      token
+      token: `Bearer ${token}`
     });
   } catch (error) {
     next(error);
@@ -116,6 +118,39 @@ const getCurrentUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.userId).select('-password');
     
+    if (!user) {
+      return next(createError(404, 'User not found'));
+    }
+    
+    res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get user by ID
+const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if requesting user's own data
+    if (req.userId.toString() === id) {
+      // Return own data
+      const user = await User.findById(id).select('-password');
+      if (!user) {
+        return next(createError(404, 'User not found'));
+      }
+      return res.status(200).json({
+        success: true,
+        user
+      });
+    }
+    
+    // For accessing other users' data, only return public info
+    const user = await User.findById(id).select('name email role verified createdAt');
     if (!user) {
       return next(createError(404, 'User not found'));
     }
@@ -142,5 +177,6 @@ module.exports = {
   registerUser,
   loginUser,
   getCurrentUser,
+  getUserById,
   logoutUser
 };
