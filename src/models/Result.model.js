@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const resultSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -17,4 +17,4 @@ const resultSchema = new mongoose.Schema({
   submittedAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("Result", resultSchema);
+module.exports = mongoose.model("Result", resultSchema);

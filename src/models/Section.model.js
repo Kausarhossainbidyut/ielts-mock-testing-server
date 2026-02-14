@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const sectionSchema = new mongoose.Schema({
   test: { type: mongoose.Schema.Types.ObjectId, ref: "Test" },
@@ -8,5 +8,4 @@ const sectionSchema = new mongoose.Schema({
   order: Number
 });
 
-
-export default mongoose.model("Section", sectionSchema);
+module.exports = mongoose.model("Section", sectionSchema);

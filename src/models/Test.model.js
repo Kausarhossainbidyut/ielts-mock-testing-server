@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const testSchema = new mongoose.Schema({
   testId: { type: String, unique: true },
@@ -14,4 +14,4 @@ const testSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("Test", testSchema);
+module.exports = mongoose.model("Test", testSchema);
