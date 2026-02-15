@@ -100,7 +100,10 @@ const loginUser = async (req, res, next) => {
 
     const userResponse = user.toObject();
     delete userResponse.password;
-
+    
+    // Ensure role is explicitly included in response
+    userResponse.role = user.role;
+    
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -116,15 +119,21 @@ const loginUser = async (req, res, next) => {
 // Get current logged in user
 const getCurrentUser = async (req, res, next) => {
   try {
+    // Get fresh user data from database to ensure role is up to date
     const user = await User.findById(req.userId).select('-password');
     
     if (!user) {
       return next(createError(404, 'User not found'));
     }
     
+    const userData = user.toObject();
+    
+    // Ensure role is always included (get latest from DB)
+    userData.role = user.role;
+    
     res.status(200).json({
       success: true,
-      user
+      user: userData
     });
   } catch (error) {
     next(error);

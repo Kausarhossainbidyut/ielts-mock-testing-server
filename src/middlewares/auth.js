@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     let token;
     
@@ -29,6 +29,16 @@ const authenticate = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded._id || decoded.id;
     req.userEmail = decoded.email;
+    req.userRole = decoded.role;
+    
+    // Get full user info for role-based access
+    const User = require('../models/User.model');
+    const user = await User.findById(req.userId).select('role');
+    if (user) {
+      req.user = { role: user.role };
+    } else {
+      req.user = { role: decoded.role };
+    }
     
     next();
   } catch (error) {

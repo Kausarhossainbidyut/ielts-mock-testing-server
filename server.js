@@ -67,14 +67,36 @@ app.use((req, res, next) => {
 });
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:3000',
+      'http://localhost:5000',
+      ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : [])
+    ];
+    const isAllowed = allowedOrigins.includes(origin);
+    callback(null, isAllowed);
+  },
   credentials: true,
-  optionsSuccessStatus: 200
-}));
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 
 // Database connection
-mongoose.connect(process.env.MONGO_CONNECTION_STRING)
+mongoose.connect(process.env.MONGO_CONNECTION_STRING, {
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  maxPoolSize: 10,
+})
 .then(() => {
   logger.dbConnected();
   logger.startup("Database connection successful");
