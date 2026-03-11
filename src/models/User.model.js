@@ -11,7 +11,11 @@ const userSchema = new mongoose.Schema({
   },
   verified: { type: Boolean, default: false },
   targetBand: { type: Number, default: 7 },
-  currentLevel: { type: String, enum: ["beginner","intermediate","advanced"], default: "beginner" },
+  currentLevel: { 
+    type: String, 
+    enum: ["beginner", "elementary", "pre-intermediate", "intermediate", "upper-intermediate", "advanced"], 
+    default: "beginner" 
+  },
   examDate: { type: Date },
   savedResources: [{ type: mongoose.Schema.Types.ObjectId, ref: "Resource" }],
   practiceHistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "PracticeHistory" }],
